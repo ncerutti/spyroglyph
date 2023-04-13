@@ -5,8 +5,8 @@ from PIL import Image
 import rasterio
 import rasterio.features
 import geopandas as gpd
-from shapely.geometry import LineString, point, shape
-from shapely.ops import cascaded_union, unary_union
+from shapely.geometry import LineString, Point, Polygon, shape
+from shapely.ops import cascaded_union, triangulate
 
 
 def prepare_image(img, size, shades, crop=False):
@@ -194,6 +194,103 @@ def spyroglyph(
     fig.savefig(output_image, dpi=300, bbox_inches="tight", pad_inches=0)
 
 
-# Test the function
+def double_spyroglyph(
+    input_image_1="test_a.png",
+    input_image_2="test_b.png",
+    size=300,
+    n_shades=16,
+    spiral_points=5000,
+    spiral_turns=50,
+    spiral_r0=0,
+    spiral_r1_f=0.5,
+    thin=0.00025,
+    thick_f=0.5,
+    spiral_offset_angle=0,
+    crop=False,
+    colormap="gray",
+    output_image="output.png",
+    rescaler_factor=1.0,
+):
+    # Prepare the image
+    img_a = Image.open(input_image_1)
+    img_a = prepare_image(img_a, size=size, shades=n_shades, crop=crop)
+    polygons_gdf_a = polygony(img_a, rescaler_factor=rescaler_factor)
+    img_b = Image.open(input_image_2)
+    img_b = prepare_image(img_b, size=size, shades=n_shades, crop=crop)
+    polygons_gdf_b = polygony(img_b, rescaler_factor=rescaler_factor)
+    try:
+        bounds = polygons_gdf_a.total_bounds
+    except ValueError:
+        print("ValueError: No polygons found.")
+        return None
+    width = bounds[2] - bounds[0]
+    height = bounds[3] - bounds[1]
+    center_x = (bounds[0] + bounds[2]) / 2
+    center_y = (bounds[1] + bounds[3]) / 2
+    scale_factor = max(width, height)
+    coords = spiral_coords(
+        center_x,
+        center_y,
+        spiral_points,
+        spiral_turns,
+        spiral_r0,
+        spiral_r1_f,
+        spiral_offset_angle,
+        scale=scale_factor,
+    )
+    gdf_spiral = coords_to_gdf_spiral(coords)
+    intersections_positive = buffered_intersections(
+        polygons_gdf_a,
+        gdf_spiral,
+        spiral_turns,
+        scale_factor,
+        thin,
+        thick_f,
+        spiral_r1=spiral_r1_f,
+    )
+
+    # Create intersections with positive and negative buffer values
+    intersections_positive["n"] = intersections_positive["col"].apply(
+        lambda x: (thick_f - thin) * x + thin
+    )
+
+    intersections_positive["geometry"] = intersections_positive.geometry.buffer(
+        intersections_positive["n"], cap_style=2, single_sided=True
+    )
+
+    intersections_negative = buffered_intersections(
+        polygons_gdf_b,
+        gdf_spiral,
+        spiral_turns,
+        scale_factor,
+        thin,
+        thick_f,
+        spiral_r1=spiral_r1_f,
+    )
+
+    # intersections_negative["geometry"] = intersections_negative.geometry.buffer(
+    #     -intersections_negative["n"], cap_style=2, single_sided=True
+    # )
+
+    # Remove Points from the intersections_negative
+    intersections_negative = intersections_negative[
+        intersections_negative["geometry"].apply(lambda x: not isinstance(x, Point))
+    ]
+
+    intersections_positive = intersections_positive[intersections_positive.is_valid]
+    intersections_negative = intersections_negative[intersections_negative.is_valid]
+
+    # Plot intersections with different colors
+    fig, ax = plt.subplots()
+    intersections_positive.plot(ax=ax, facecolor="blue", edgecolor="none", cmap="gray")
+    intersections_negative.plot(ax=ax, facecolor="red", edgecolor="none")
+    ax.set_aspect("equal")
+    ax.set_axis_off()
+    plt.tight_layout()
+    plt.show()
+    fig.savefig(output_image, dpi=300, bbox_inches="tight", pad_inches=0)
+
+
 if __name__ == "__main__":
-    spyroglyph("test.png", output_image="output.png")
+    # double_spyroglyph("test.png", "test_chad.png", output_image="output.png")
+    # spyroglyph("test.png", output_image="output.png")
