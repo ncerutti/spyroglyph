@@ -53,6 +53,8 @@ def spiral_image(
                         ]
                     )
                 )
+    # print the image obtained from the polygon
+    
 
     # Generate spiral
     def spiral_coords(xo, yo, n_points, n_turns, r0, r1, offset_angle):

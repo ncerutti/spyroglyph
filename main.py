@@ -2,7 +2,10 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image, ImageOps
-from shapely.geometry import LineString, Polygon, MultiPolygon
+import rasterio
+from shapely.geometry import LineString, Polygon, MultiPolygon, box
+from shapely.ops import polygonize
+
 
 
 def prepare_image(
@@ -23,6 +26,19 @@ def prepare_image(
         image = ImageOps.flip(image)
     return image
 
+def raster_to_geodataframe(raster_array):
+    polygons = []
+    for y in range(raster_array.shape[0]):
+        for x in range(raster_array.shape[1]):
+            if raster_array[y, x] > 0:
+                polygons.append(
+                    {
+                        "geometry": box(x, y, x + 1, y + 1),
+                        "col": raster_array[y, x],
+                    }
+                )
+    return gpd.GeoDataFrame(polygons)
+
 
 def polygony(
     image: Image, size: int = 300, shades: int = 16, flip: bool = True
@@ -39,6 +55,13 @@ def polygony(
         list: List of polygons
     """
     image = prepare_image(image, size, shades, flip)
+    # save image as test2.png
+    image.save("test2.png")
+    with rasterio.open("test2.png") as src:
+        red_band = src.read(1)
+        height, width = red_band.shape
+        rescaled_red_band = 1 - (red_band - red_band.min()) / (red_band.max() - red_band.min())
+    i_sf = raster_to_geodataframe(rescaled_red_band)
     image = np.array(image).astype(np.float32) / 255.0
     polygons = []
     for y in range(size):
@@ -56,11 +79,21 @@ def polygony(
                 )
     return polygons
 
+def plot_polygons(polygons):
+    fig, ax = plt.subplots()
+    polygons.plot(column="col", cmap="viridis_r", ax=ax, edgecolor="none")
+    plt.show()
 
 if __name__ == "__main__":
     image = Image.open("test.png")
-    image = prepare_image(image)
-    polygons = polygony(image)
-    gdf = gpd.GeoDataFrame(geometry=polygons)
-    gdf.plot()
+    # Print image
+    plt.imshow(image)
     plt.show()
+    image = prepare_image(image, flip=True)
+    # Print prepared image
+    plt.imshow(image)
+    plt.show()
+    polygons = polygony(image)
+    # Print image obtained from the polygon
+    plot_polygons(polygons)
+
