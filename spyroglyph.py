@@ -9,20 +9,13 @@ from shapely.geometry import LineString, point, shape
 from shapely.ops import cascaded_union, unary_union
 
 
-def prepare_image(img, size, shades, invert):
-    i = img.resize((size, size))
-    plt.imshow(i)
-    plt.show()
+def prepare_image(img, size, shades, crop=False):
+    if crop:
+        i = img.crop((0, 0, size, size))
+    else:
+        i = img.resize((size, size))
     i = i.quantize(shades)
-    plt.imshow(i)
-    plt.show()
     i = i.convert("L")
-    plt.imshow(i)
-    plt.show()
-    if invert:
-        i = Image.fromarray(255 - np.array(i))
-        plt.imshow(i)
-        plt.show()
     return i
 
 
@@ -35,23 +28,17 @@ def raster_to_geodataframe(image, rescaled_red_band):
     return gpd.GeoDataFrame(polygons)
 
 
-def polygony(
-    image: Image, size: int = 300, shades: int = 16, invert: bool = True
-) -> list:
-    image = prepare_image(image, size, shades, invert)
-    # Flip image top to bottom
+def polygony(image: Image, rescaler_factor=1.0) -> list:
     image = image.transpose(Image.FLIP_TOP_BOTTOM)
     image.save("test2.png")
-
     with rasterio.open("test2.png") as src:
         red_band = src.read(1)
         # rescaled_red_band = 1 - (red_band - red_band.min()) / (
         #     red_band.max() - red_band.min()
         # )
-        rescaled_red_band = 1 - (red_band - red_band.min()) / (
+        rescaled_red_band = rescaler_factor - (red_band - red_band.min()) / (
             red_band.max() - red_band.min()
         )
-
     i_sf = raster_to_geodataframe(src, rescaled_red_band)
     return i_sf
 
@@ -102,14 +89,16 @@ def coords_to_gdf_spiral(coords):
     return gdf_spiral
 
 
-def buffered_intersections(polygons_gdf, gdf_spiral, n_turns):
+def buffered_intersections(
+    polygons_gdf, gdf_spiral, n_turns, scale_factor, thin, thick, spiral_r1
+):
     intersections = gpd.overlay(
         polygons_gdf, gdf_spiral, how="intersection", keep_geom_type=False
     )
 
     if not intersections.empty:
-        thin = 0.00025 * scale_factor
-        thick = ((0.5 / n_turns) / 2) * 0.50 * scale_factor
+        thin = thin
+        thick = ((spiral_r1 / n_turns) / 2) * thick * scale_factor
 
         intersections["n"] = intersections["col"].apply(
             lambda x: (thick - thin) * x + thin
@@ -123,35 +112,88 @@ def buffered_intersections(polygons_gdf, gdf_spiral, n_turns):
         return None
 
 
-# Test the function
-if __name__ == "__main__":
-    img = Image.open("test.png")
-    imaprep = prepare_image(img, 300, 16, True)
-    plt.imshow(imaprep)
-    plt.show()
-    polygons_gdf = polygony(img)
-
-    bounds = polygons_gdf.total_bounds
+def spyroglyph(
+    input_image="test.png",
+    size=300,
+    n_shades=16,
+    spiral_points=5000,
+    spiral_turns=50,
+    spiral_r0=0,
+    spiral_r1_f=0.5,
+    thin=0.00025,
+    thick_f=0.95,
+    spiral_offset_angle=0,
+    crop=False,
+    colormap="gray",
+    output_image="output.png",
+    rescaler_factor=1.0,
+):
+    """
+    Args:
+        image (_type_): _description_
+        n_turns (int, optional): _description_. Defaults to 50.
+        n_points (int, optional): _description_. Defaults to 5000.
+        size (int, optional): _description_. Defaults to 300.
+        invert (_type_, optional): _description_. Defaults to FALSE.
+        size (int, optional): _description_. Defaults to 300.
+        n_shades (int, optional): _description_. Defaults to 16.
+        spiral_points (int, optional): _description_. Defaults to 5000.
+        spiral_turns (int, optional): _description_. Defaults to 50.
+        spiral_r0 (int, optional): _description_. Defaults to 0.
+        spiral_r1_f (int, optional): _description_. Defaults to 1.
+        thin (float, optional): _description_. Defaults to 0.00025.
+        thick_f (float, optional): _description_. Defaults to 0.95.
+        spiral_offset_angle (int, optional): _description_. Defaults to 0.
+        crop (bool, optional): _description_. Defaults to False.
+        colormap (str, optional): _description_. Defaults to "gray".
+        output_image (str, optional): _description_. Defaults to "output.png".
+        rescaler_factor (float, optional): _description_. Defaults to 1.0.
+    """
+    # Prepare the image
+    img = Image.open(input_image)
+    img = prepare_image(img, size=size, shades=n_shades, crop=crop)
+    polygons_gdf = polygony(img, rescaler_factor=rescaler_factor)
+    try:
+        bounds = polygons_gdf.total_bounds
+    except ValueError:
+        print("ValueError: No polygons found.")
+        return None
     width = bounds[2] - bounds[0]
     height = bounds[3] - bounds[1]
     center_x = (bounds[0] + bounds[2]) / 2
     center_y = (bounds[1] + bounds[3]) / 2
-
-    # Adjust the scale factor if needed
     scale_factor = max(width, height)
-    coords = spiral_coords(center_x, center_y, 5000, 66, 0, 0.5, 0, scale=scale_factor)
-
-    # Extract the list of geometries from the GeoDataFrame
-    plot_spiral_and_polygons(coords, polygons_gdf)
-
+    coords = spiral_coords(
+        center_x,
+        center_y,
+        spiral_points,
+        spiral_turns,
+        spiral_r0,
+        spiral_r1_f,
+        spiral_offset_angle,
+        scale=scale_factor,
+    )
     gdf_spiral = coords_to_gdf_spiral(coords)
-    plot_polygons(polygons_gdf)
-    intersections = buffered_intersections(polygons_gdf, gdf_spiral, 50)
-
-    # Plot the buffered intersections
+    intersections = buffered_intersections(
+        polygons_gdf,
+        gdf_spiral,
+        spiral_turns,
+        scale_factor,
+        thin,
+        thick_f,
+        spiral_r1=spiral_r1_f,
+    )
     fig, ax = plt.subplots()
-    intersections.plot(ax=ax, facecolor="black", edgecolor="none", cmap="viridis_r")
+    # intersections.plot(ax=ax, facecolor="black", edgecolor="none", cmap="gray")
+    intersections.plot(ax=ax, facecolor="black", edgecolor="none", cmap="gray")
+    # intersections.plot(ax=ax, facecolor="black", edgecolor="none", cmap="plasma")
     ax.set_aspect("equal")
     ax.set_axis_off()
     plt.tight_layout()
     plt.show()
+    fig.savefig(output_image, dpi=300, bbox_inches="tight", pad_inches=0)
+
+
+# Test the function
+if __name__ == "__main__":
+    spyroglyph("test.png", output_image="output.png")
