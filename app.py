@@ -188,9 +188,10 @@ def spyroglyph(
         spiral_r1=spiral_r1_f,
     )
     fig, ax = plt.subplots()
-    # intersections.plot(ax=ax, facecolor="black", edgecolor="none", cmap="gray")
-    intersections.plot(ax=ax, facecolor="black", edgecolor="none", cmap="gray")
-    # intersections.plot(ax=ax, facecolor="black", edgecolor="none", cmap="plasma")
+    if colormap == "none":
+        intersections.plot(ax=ax, facecolor="black", edgecolor="none")
+    else:
+        intersections.plot(ax=ax, facecolor="black", edgecolor="none", cmap=colormap)
     ax.set_aspect("equal")
     ax.set_axis_off()
     plt.tight_layout()
@@ -297,7 +298,6 @@ def double_spyroglyph(
 
 def main():
     st.title("Spyroglyph")
-
     uploaded_file = st.file_uploader("Choose a png image file", type=["png"])
     if uploaded_file is not None:
         input_image = Image.open(uploaded_file)
@@ -312,7 +312,9 @@ def main():
         thick_f = st.sidebar.slider("Thick factor", 0.0, 1.0, 0.95)
         spiral_offset_angle = st.sidebar.slider("Spiral Offset Angle", 0, 360, 0)
         crop = st.sidebar.checkbox("Crop Image")
-        colormap = st.sidebar.selectbox("Colormap", ["gray", "viridis", "plasma"])
+        colormap = st.sidebar.selectbox(
+            "Colormap", ["gray", "viridis", "plasma", "none"]
+        )
         rescaler_factor = st.sidebar.slider("Rescaler Factor", 0.0, 2.0, 1.0)
         # Create a temporary file for the input image
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file:
