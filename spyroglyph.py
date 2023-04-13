@@ -6,7 +6,7 @@ import rasterio
 import rasterio.features
 import geopandas as gpd
 from shapely.geometry import LineString, Point, Polygon, shape
-from shapely.ops import cascaded_union, triangulate
+# from shapely.ops import cascaded_union, triangulate
 
 
 def prepare_image(img, size, shades, crop=False):
