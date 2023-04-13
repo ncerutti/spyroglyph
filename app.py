@@ -1,4 +1,5 @@
 import streamlit as st
+import tempfile
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -8,6 +9,7 @@ import rasterio
 import rasterio.features
 import geopandas as gpd
 from shapely.geometry import LineString, Point, Polygon, shape
+
 # from shapely.ops import cascaded_union, triangulate
 
 
@@ -294,14 +296,12 @@ def double_spyroglyph(
 
 
 def main():
-    def main():
     st.title("Spyroglyph")
 
-    uploaded_file = st.file_uploader("Choose an image file", type=["jpg", "jpeg", "png"])
+    uploaded_file = st.file_uploader("Choose a png image file", type=["png"])
     if uploaded_file is not None:
         input_image = Image.open(uploaded_file)
         st.image(input_image, caption="Uploaded Image", use_column_width=True)
-
         size = st.sidebar.slider("Size", 100, 500, 300)
         shades = st.sidebar.slider("Shades", 1, 64, 16)
         spiral_points = st.sidebar.slider("Spiral Points", 1000, 10000, 5000)
@@ -314,11 +314,15 @@ def main():
         crop = st.sidebar.checkbox("Crop Image")
         colormap = st.sidebar.selectbox("Colormap", ["gray", "viridis", "plasma"])
         rescaler_factor = st.sidebar.slider("Rescaler Factor", 0.0, 2.0, 1.0)
+        # Create a temporary file for the input image
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file:
+            input_image.save(temp_file.name)
+            temp_file_path = temp_file.name
 
         if st.button("Generate Spyroglyph"):
             output_buffer = io.BytesIO()
             spyroglyph(
-                input_image=input_image,
+                input_image=temp_file_path,
                 size=size,
                 n_shades=shades,
                 spiral_points=spiral_points,
@@ -334,9 +338,13 @@ def main():
                 rescaler_factor=rescaler_factor,
             )
             output_image = Image.open(output_buffer)
-            st.image(output_image, caption="Generated Spyroglyph", use_column_width=True)
+            st.image(
+                output_image, caption="Generated Spyroglyph", use_column_width=True
+            )
             output_buffer.seek(0)
-            st.download_button("Download Spyroglyph", output_buffer, file_name="spyroglyph.png")
+            st.download_button(
+                "Download Spyroglyph", output_buffer, file_name="spyroglyph.png"
+            )
 
 
 if __name__ == "__main__":
