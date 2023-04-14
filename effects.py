@@ -1,16 +1,12 @@
-import streamlit as st
-import tempfile
 import matplotlib.pyplot as plt
+import noise
 import numpy as np
 import pandas as pd
-from PIL import Image
-import io
+from PIL import Image, ImageDraw
 import rasterio
 import rasterio.features
 import geopandas as gpd
 from shapely.geometry import LineString, Point, Polygon, shape
-
-# from shapely.ops import cascaded_union, triangulate
 
 
 def prepare_image(img, size, shades, crop=False):
@@ -116,7 +112,7 @@ def buffered_intersections(
         return None
 
 
-def spyroglyph(
+def spiral_function(
     input_image="test.png",
     size=300,
     n_shades=16,
@@ -199,7 +195,7 @@ def spyroglyph(
     fig.savefig(output_image, dpi=300, bbox_inches="tight", pad_inches=0)
 
 
-def double_spyroglyph(
+def double_spiral_function(
     input_image_1="test_a.png",
     input_image_2="test_b.png",
     size=300,
@@ -296,7 +292,7 @@ def double_spyroglyph(
     fig.savefig(output_image, dpi=300, bbox_inches="tight", pad_inches=0)
 
 
-def gridoglyph(
+def grid_function(
     input_image="test.png",
     size=300,
     n_shades=16,
@@ -312,84 +308,123 @@ def gridoglyph(
     pass
 
 
-def main():
-    st.title("Spyroglyph")
-    uploaded_file = st.file_uploader("Choose a png image file", type=["png"])
-    if uploaded_file is not None:
-        input_image = Image.open(uploaded_file)
-        st.image(input_image, caption="Uploaded Image", use_column_width=True)
-        size = st.sidebar.slider("Size", 100, 500, 300)
-        shades = st.sidebar.slider("Shades", 1, 64, 16)
-        spiral_points = st.sidebar.slider("Spiral Points", 1000, 10000, 5000)
-        spiral_turns = st.sidebar.slider("Spiral Turns", 10, 100, 50)
-        spiral_r0 = st.sidebar.slider("Spiral r0", 0, 100, 0)
-        spiral_r1_f = st.sidebar.slider("Spiral r1 factor", 0.0, 1.0, 0.5)
-        thin = st.sidebar.slider("Thin", 0.0001, 0.0010, 0.00025)
-        thick_f = st.sidebar.slider("Thick factor", 0.0, 1.0, 0.95)
-        spiral_offset_angle = st.sidebar.slider("Spiral Offset Angle", 0, 360, 0)
-        crop = st.sidebar.checkbox("Crop Image")
-        colormap = st.sidebar.selectbox(
-            "Colormap", ["gray", "viridis", "plasma", "none"]
-        )
-        rescaler_factor = st.sidebar.slider("Rescaler Factor", 0.0, 2.0, 1.0)
-        grid_size = st.sidebar.slider("Grid Size", 1, 50, 10)
-        grid_angle = st.sidebar.slider("Grid Angle", 0, 360, 0)
-        # Create a temporary file for the input image
-        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file:
-            input_image.save(temp_file.name)
-            temp_file_path = temp_file.name
+def create_noise_matrix(x_side, y_side):
+    noise_matrix = np.zeros((y_side, x_side))
 
-        if st.button("Generate Spyroglyph"):
-            output_buffer = io.BytesIO()
-            spyroglyph(
-                input_image=temp_file_path,
-                size=size,
-                n_shades=shades,
-                spiral_points=spiral_points,
-                spiral_turns=spiral_turns,
-                spiral_r0=spiral_r0,
-                spiral_r1_f=spiral_r1_f,
-                thin=thin,
-                thick_f=thick_f,
-                spiral_offset_angle=spiral_offset_angle,
-                crop=crop,
-                colormap=colormap,
-                output_image=output_buffer,
-                rescaler_factor=rescaler_factor,
-            )
-            output_image = Image.open(output_buffer)
-            st.image(
-                output_image, caption="Generated Spyroglyph", use_column_width=True
-            )
-            output_buffer.seek(0)
-            st.download_button(
-                "Download Spyroglyph", output_buffer, file_name="spyroglyph.png"
+    for i in range(y_side):
+        for j in range(x_side):
+            noise_matrix[i][j] = noise.snoise2(
+                i * 0.0003, j * 0.0003, octaves=1, persistence=0.5, lacunarity=2.0
             )
 
-        if st.button("Generate Gridoglyph"):
-            output_buffer = io.BytesIO()
-            gridoglyph(
-                input_image=temp_file_path,
-                size=size,
-                n_shades=shades,
-                grid_size=grid_size,
-                thin=thin,
-                thick_f=thick_f,
-                grid_angle=grid_angle,
-                crop=crop,
-                colormap=colormap,
-                output_image=output_buffer,
-                rescaler_factor=rescaler_factor,
-            )
-            output_image = Image.open(output_buffer)
-            st.image(
-                output_image, caption="Generated Gridoglyph", use_column_width=True
-            )
-            output_buffer.seek(0)
-            st.download_button(
-                "Download Gridoglyph", output_buffer, file_name="gridoglyph.png"
-            )
+    noise_matrix = np.interp(
+        noise_matrix, (noise_matrix.min(), noise_matrix.max()), (-90, 90)
+    )
+    return noise_matrix
 
 
-if __name__ == "__main__":
-    main()
+def flow_polygons(x_start, y_start, step_length, n_steps, angle_matrix):
+    out_x = [x_start] + [np.nan] * n_steps
+    out_y = [y_start] + [np.nan] * n_steps
+
+    if (
+        x_start > angle_matrix.shape[1]
+        or x_start < 1
+        or y_start > angle_matrix.shape[0]
+        or y_start < 1
+    ):
+        return None
+
+    for i in range(n_steps):
+        a = angle_matrix[int(round(out_y[i])) - 1, int(round(out_x[i])) - 1]
+        step_x = np.cos(np.radians(a)) * step_length
+        step_y = np.sin(np.radians(a)) * step_length
+
+        next_x = out_x[i] + step_x
+        next_y = out_y[i] + step_y
+
+        if (
+            next_x > angle_matrix.shape[1]
+            or next_x < 1
+            or next_y > angle_matrix.shape[0]
+            or next_y < 1
+        ):
+            break
+
+        out_x[i + 1] = next_x
+        out_y[i + 1] = next_y
+
+    coords = np.column_stack((out_x, out_y))
+    coords = coords[~np.isnan(coords).any(axis=1)]
+
+    return coords
+
+
+def flow_function(
+    input_image,
+    size=300,
+    x_side=300,
+    y_side=300,
+    n_points=800,
+    step_length=1,
+    n_steps=400,
+    n_shades=16,
+    thin=0.0001,
+    thick=0.0025,
+    output_image="output_flow.png",
+    crop=False,
+    rescaler_factor=1.0,
+):
+    # Prepare the image
+    img = Image.open(input_image)
+    img = prepare_image(img, size=size, shades=n_shades, crop=crop)
+    polygons_gdf = polygony(img, rescaler_factor=rescaler_factor)
+
+    noise_matrix = create_noise_matrix(x_side, y_side)
+
+    x_starts = np.random.uniform(1, noise_matrix.shape[1], n_points)
+    y_starts = np.random.uniform(1, noise_matrix.shape[0], n_points)
+
+    flow_lines = []
+
+    for x_start, y_start in zip(x_starts, y_starts):
+        coords = flow_polygons(x_start, y_start, step_length, n_steps, noise_matrix)
+        if coords is not None and len(coords) > 1:
+            line = LineString(coords)
+            flow_lines.append(line)
+
+    flow_gdf = gpd.GeoDataFrame(geometry=flow_lines)
+
+    # Intersect flow lines with polygons
+    intersections = gpd.overlay(
+        polygons_gdf, flow_gdf, how="intersection", keep_geom_type=False
+    )
+
+    # Calculate line widths based on the 'col' value
+    intersections["n"] = intersections["col"].apply(lambda x: (thick - thin) * x + thin)
+    intersections["geometry"] = intersections.geometry.buffer(
+        intersections["n"], cap_style=2
+    )
+
+    # Plot the intersections
+    fig, ax = plt.subplots()
+    # if colormap == "none":
+    #    intersections.plot(ax=ax, facecolor="black", edgecolor="none")
+    # else:
+    #    intersections.plot(ax=ax, facecolor="black", edgecolor="none", cmap=colormap)
+    intersections.plot(ax=ax, facecolor="black", edgecolor="none", cmap="gray")
+    ax.set_aspect("equal")
+    ax.set_axis_off()
+    plt.tight_layout()
+    plt.show()
+    fig.savefig(output_image, dpi=300, bbox_inches="tight", pad_inches=0)
+
+    # Convert flow lines to a PIL image
+    img_width, img_height = input_image.size
+    flowed_image = Image.new("L", (img_width, img_height), 255)
+    draw = ImageDraw.Draw(flowed_image)
+
+    for line in flow_gdf.geometry:
+        draw.line(line.coords, fill=0)
+
+    return flowed_image
