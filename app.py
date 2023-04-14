@@ -296,6 +296,22 @@ def double_spyroglyph(
     fig.savefig(output_image, dpi=300, bbox_inches="tight", pad_inches=0)
 
 
+def gridoglyph(
+    input_image="test.png",
+    size=300,
+    n_shades=16,
+    grid_size=10,
+    thin=0.00025,
+    thick_f=0.95,
+    grid_angle=0,
+    crop=False,
+    colormap="gray",
+    output_image="output.png",
+    rescaler_factor=1.0,
+):
+    pass
+
+
 def main():
     st.title("Spyroglyph")
     uploaded_file = st.file_uploader("Choose a png image file", type=["png"])
@@ -316,6 +332,8 @@ def main():
             "Colormap", ["gray", "viridis", "plasma", "none"]
         )
         rescaler_factor = st.sidebar.slider("Rescaler Factor", 0.0, 2.0, 1.0)
+        grid_size = st.sidebar.slider("Grid Size", 1, 50, 10)
+        grid_angle = st.sidebar.slider("Grid Angle", 0, 360, 0)
         # Create a temporary file for the input image
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file:
             input_image.save(temp_file.name)
@@ -346,6 +364,30 @@ def main():
             output_buffer.seek(0)
             st.download_button(
                 "Download Spyroglyph", output_buffer, file_name="spyroglyph.png"
+            )
+
+        if st.button("Generate Gridoglyph"):
+            output_buffer = io.BytesIO()
+            gridoglyph(
+                input_image=temp_file_path,
+                size=size,
+                n_shades=shades,
+                grid_size=grid_size,
+                thin=thin,
+                thick_f=thick_f,
+                grid_angle=grid_angle,
+                crop=crop,
+                colormap=colormap,
+                output_image=output_buffer,
+                rescaler_factor=rescaler_factor,
+            )
+            output_image = Image.open(output_buffer)
+            st.image(
+                output_image, caption="Generated Gridoglyph", use_column_width=True
+            )
+            output_buffer.seek(0)
+            st.download_button(
+                "Download Gridoglyph", output_buffer, file_name="gridoglyph.png"
             )
 
 
