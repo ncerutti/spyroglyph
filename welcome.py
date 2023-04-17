@@ -32,8 +32,8 @@ def main():
             switch_page("spiral")
         elif selected_function == "Double Spiral":
             switch_page("double_spiral")
-        elif selected_function == "Grid":
-            gridoglyph_page()
+        elif selected_function == "Flow":
+            switch_page("flow")
 
 
 if __name__ == "__main__":

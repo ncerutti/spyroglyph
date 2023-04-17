@@ -1,3 +1,4 @@
+import io
 import matplotlib.pyplot as plt
 import noise
 import numpy as np
@@ -374,6 +375,7 @@ def flow_function(
     output_image="output_flow.png",
     crop=False,
     rescaler_factor=1.0,
+    colormap="none",
 ):
     # Prepare the image
     img = Image.open(input_image)
@@ -408,11 +410,10 @@ def flow_function(
 
     # Plot the intersections
     fig, ax = plt.subplots()
-    # if colormap == "none":
-    #    intersections.plot(ax=ax, facecolor="black", edgecolor="none")
-    # else:
-    #    intersections.plot(ax=ax, facecolor="black", edgecolor="none", cmap=colormap)
-    intersections.plot(ax=ax, facecolor="black", edgecolor="none", cmap="gray")
+    if colormap == "none":
+        intersections.plot(ax=ax, facecolor="gray", edgecolor="none")
+    else:
+        intersections.plot(ax=ax, facecolor="black", edgecolor="none", cmap=colormap)
     ax.set_aspect("equal")
     ax.set_axis_off()
     plt.tight_layout()
@@ -420,11 +421,17 @@ def flow_function(
     fig.savefig(output_image, dpi=300, bbox_inches="tight", pad_inches=0)
 
     # Convert flow lines to a PIL image
-    img_width, img_height = input_image.size
+    img_width, img_height = img.size
     flowed_image = Image.new("L", (img_width, img_height), 255)
     draw = ImageDraw.Draw(flowed_image)
 
     for line in flow_gdf.geometry:
         draw.line(line.coords, fill=0)
+
+    # Convert the plotted figure to a PIL image
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=300, bbox_inches="tight", pad_inches=0)
+    buf.seek(0)
+    flowed_image = Image.open(buf)
 
     return flowed_image
