@@ -21,9 +21,7 @@ def main():
         thick_f = st.sidebar.slider("Thick factor", 0.0, 1.0, 0.95)
         spiral_offset_angle = st.sidebar.slider("Spiral Offset Angle", 0, 360, 0)
         crop = st.sidebar.checkbox("Crop Image")
-        colormap = st.sidebar.selectbox(
-            "Colormap", ["gray", "viridis", "plasma", "none"]
-        )
+        colormap = st.sidebar.selectbox("Colormap", ["none", "viridis", "plasma"])
         rescaler_factor = st.sidebar.slider("Rescaler Factor", 0.0, 2.0, 1.0)
         grid_size = st.sidebar.slider("Grid Size", 1, 50, 10)
         grid_angle = st.sidebar.slider("Grid Angle", 0, 360, 0)
