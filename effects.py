@@ -284,8 +284,8 @@ def double_spiral_function(
 
     # Plot intersections with different colors
     fig, ax = plt.subplots()
-    intersections_positive.plot(ax=ax, facecolor="blue", edgecolor="none", cmap="gray")
-    intersections_negative.plot(ax=ax, facecolor="red", edgecolor="none")
+    intersections_positive.plot(ax=ax, facecolor="blue", edgecolor="none", alpha=0.75)
+    intersections_negative.plot(ax=ax, facecolor="red", edgecolor="none", alpha=0.5)
     ax.set_aspect("equal")
     ax.set_axis_off()
     plt.tight_layout()
