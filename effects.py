@@ -1,3 +1,4 @@
+""" Here are the effects that can be applied to the images"""
 import io
 import matplotlib.pyplot as plt
 import noise
@@ -11,6 +12,17 @@ from shapely.geometry import LineString, Point, Polygon, shape
 
 
 def prepare_image(img, size, shades, crop=False):
+    """_summary_
+
+    Args:
+        img (PIL image): input image
+        size (int): target size
+        shades (int): number of shades
+        crop (bool, optional): Should the image be cropped instead of resized? Defaults to False.
+
+    Returns:
+        i (PIL image): black and white, quantized, resized image
+    """
     if crop:
         i = img.crop((0, 0, size, size))
     else:
@@ -21,6 +33,15 @@ def prepare_image(img, size, shades, crop=False):
 
 
 def raster_to_geodataframe(image, rescaled_red_band):
+    """Use rasterio to convert a raster image to a GeoDataFrame
+
+    Args:
+        image (_type_): PIL image
+        rescaled_red_band (_type_): one of the channels
+
+    Returns:
+        GeoDataFrame object
+    """
     mask = rescaled_red_band > 0
     shapes = rasterio.features.shapes(
         rescaled_red_band.astype(np.float32), mask=mask, transform=image.transform
@@ -30,6 +51,15 @@ def raster_to_geodataframe(image, rescaled_red_band):
 
 
 def polygony(image: Image, rescaler_factor=1.0) -> list:
+    """Convert the input PIL Image into a GeoDataFrame of polygons.
+
+    Args:
+        image (PIL Image): Input image
+    rescaler_factor (float, optional): Rescaling factor for rescaled_red_band. Defaults to 1.0.
+
+    Returns:
+        list: List of polygons as a GeoDataFrame object
+    """
     image = image.transpose(Image.FLIP_TOP_BOTTOM)
     image.save("test2.png")
     with rasterio.open("test2.png") as src:
@@ -45,6 +75,14 @@ def polygony(image: Image, rescaler_factor=1.0) -> list:
 
 
 def plot_spiral_and_polygons(spiral_coords, polygons_gdf):
+    """Plot the given spiral coordinates and polygons GeoDataFrame. Mostly for debugging.
+
+    Args:
+    spiral_coords (pd.DataFrame): DataFrame containing the spiral coordinates
+    polygons_gdf (geopandas.GeoDataFrame): GeoDataFrame containing polygons
+
+    """
+
     # Convert the spiral coordinates to a LineString
     spiral = LineString(spiral_coords.values)
 
@@ -65,12 +103,32 @@ def plot_spiral_and_polygons(spiral_coords, polygons_gdf):
 
 
 def plot_polygons(polygons):
+    """Plot the given polygons GeoDataFrame. Mostly for debugging.
+
+    Args:
+        polygons (geopandas.GeoDataFrame): GeoDataFrame containing polygons
+    """
     fig, ax = plt.subplots()
     polygons.plot(column="col", cmap="viridis_r", ax=ax, edgecolor="none")
     plt.show()
 
 
 def spiral_coords(xo, yo, n_points, n_turns, r0, r1, offset_angle, scale=1):
+    """Generate the coordinates for a spiral.
+
+    Args:
+        xo (float): X-coordinate of the spiral's center
+        yo (float): Y-coordinate of the spiral's center
+        n_points (int): Number of points in the spiral
+        n_turns (int): Number of turns in the spiral
+        r0 (float): Initial radius of the spiral
+        r1 (float): Final radius of the spiral
+        offset_angle (float): Angle to offset the spiral, in degrees
+        scale (float, optional): Scaling factor for the spiral. Defaults to 1.
+
+    Returns:
+        pd.DataFrame: DataFrame containing the coordinates of the spiral
+    """
     b = (r1 - r0) / (2 * np.pi * n_turns)
     l = np.linspace(0, 2 * np.pi * n_turns, num=n_points)
 
@@ -81,6 +139,22 @@ def spiral_coords(xo, yo, n_points, n_turns, r0, r1, offset_angle, scale=1):
 
 
 def coords_to_gdf_spiral(coords):
+    """Converts the given coordinates into a GeoDataFrame containing a LineString.
+
+    Args:
+        xo (float): X-coordinate of the spiral's center
+        yo (float): Y-coordinate of the spiral's center
+        n_points (int): Number of points in the spiral
+        n_turns (int): Number of turns in the spiral
+        r0 (float): Initial radius of the spiral
+        r1 (float): Final radius of the spiral
+        offset_angle (float): Angle to offset the spiral, in degrees
+        scale (float, optional): Scaling factor for the spiral. Defaults to 1.
+
+    Returns:
+        pd.DataFrame: DataFrame containing the coordinates of the spiral
+    """
+
     # Convert the coordinates to a LineString
     spiral_linestring = LineString(coords)
 
@@ -93,6 +167,19 @@ def coords_to_gdf_spiral(coords):
 def buffered_intersections(
     polygons_gdf, gdf_spiral, n_turns, scale_factor, thin, thick, spiral_r1
 ):
+    """Calculate buffered intersections between polygons and spiral.
+
+    Args:
+        polygons_gdf (geopandas.GeoDataFrame): GeoDataFrame containing polygons
+        gdf_spiral (geopandas.GeoDataFrame): GeoDataFrame containing the spiral
+        n_turns (int): Number of turns in the spiral
+        scale_factor (float): Scaling factor for the spiral
+        thin (float): Minimum buffer width
+        thick (float): Maximum buffer width
+        spiral_r1 (float): Final radius of the spiral
+
+    Returns:
+        geopandas.GeoDataFrame: Buffered intersections"""
     intersections = gpd.overlay(
         polygons_gdf, gdf_spiral, how="intersection", keep_geom_type=False
     )
@@ -306,10 +393,35 @@ def grid_function(
     output_image="output.png",
     rescaler_factor=1.0,
 ):
+    """TBD
+
+    Args:
+        input_image (str, optional): _description_. Defaults to "test.png".
+        size (int, optional): _description_. Defaults to 300.
+        n_shades (int, optional): _description_. Defaults to 16.
+        grid_size (int, optional): _description_. Defaults to 10.
+        thin (float, optional): _description_. Defaults to 0.00025.
+        thick_f (float, optional): _description_. Defaults to 0.95.
+        grid_angle (int, optional): _description_. Defaults to 0.
+        crop (bool, optional): _description_. Defaults to False.
+        colormap (str, optional): _description_. Defaults to "gray".
+        output_image (str, optional): _description_. Defaults to "output.png".
+        rescaler_factor (float, optional): _description_. Defaults to 1.0.
+    """
     pass
 
 
 def create_noise_matrix(x_side, y_side):
+    """
+    Create a noise matrix using Perlin noise.
+
+    Args:
+        x_side (int): Width of the noise matrix.
+        y_side (int): Height of the noise matrix.
+
+    Returns:
+        noise_matrix (numpy array): 2D noise matrix with the given dimensions.
+    """
     noise_matrix = np.zeros((y_side, x_side))
 
     for i in range(y_side):
