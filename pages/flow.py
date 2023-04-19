@@ -14,14 +14,12 @@ def main():
         size = st.sidebar.slider("Size", 100, 500, 300)
         n_points = st.sidebar.slider("Number of points", 100, 500, 800)
         step_length = st.sidebar.slider("Step length", 1, 10, 1)
-        spiral_r0 = st.sidebar.slider("Spiral r0", 0, 100, 0)
-        spiral_r1_f = st.sidebar.slider("Spiral r1 factor", 0.0, 1.0, 0.5)
+        color = st.sidebar.color_picker("Color", "#000000")
+        alpha = st.sidebar.slider("Alpha", 0.0, 1.0, 1.0)
         thin = st.sidebar.slider("Thin", 0.0001, 0.0010, 0.00025)
         thick_f = st.sidebar.slider("Thick factor", 0.0, 1.0, 0.45)
         n_steps = st.sidebar.slider("Number of steps", 0, 1000, 400)
-        crop = st.sidebar.checkbox("Crop Image")
         colormap = st.sidebar.selectbox("Colormap", ["viridis", "plasma", "none"])
-        rescaler_factor = st.sidebar.slider("Rescaler Factor", 0.0, 2.0, 1.0)
         # Create a temporary file for the input image
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file:
             input_image.save(temp_file.name)
@@ -39,6 +37,8 @@ def main():
                 thin=thin,
                 thick=thick_f,
                 colormap=colormap,
+                color=color,
+                alpha=alpha,
             )
             # output_image = Image.open(output_buffer)
             # st.image(output_image, caption="Generated Flow", use_column_width=True)

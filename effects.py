@@ -498,6 +498,8 @@ def flow_function(
     output_image="output_flow.png",
     crop=False,
     rescaler_factor=1.0,
+    color = "black",
+    alpha = 1.0,
     colormap="none",
 ):
     # Prepare the image
@@ -534,9 +536,9 @@ def flow_function(
     # Plot the intersections
     fig, ax = plt.subplots()
     if colormap == "none":
-        intersections.plot(ax=ax, facecolor="gray", edgecolor="none")
+        intersections.plot(ax=ax, facecolor=color, edgecolor="none", alpha=alpha)
     else:
-        intersections.plot(ax=ax, facecolor="black", edgecolor="none", cmap=colormap)
+        intersections.plot(ax=ax, facecolor=color, edgecolor="none", cmap=colormap, alpha=alpha)
     ax.set_aspect("equal")
     ax.set_axis_off()
     plt.tight_layout()
