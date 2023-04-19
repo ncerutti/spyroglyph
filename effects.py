@@ -212,7 +212,7 @@ def spiral_function(
     thick_f=0.95,
     spiral_offset_angle=0,
     crop=False,
-    color="black",
+    color="#000000",
     colormap="gray",
     output_image="output.png",
     rescaler_factor=1.0,
@@ -498,8 +498,8 @@ def flow_function(
     output_image="output_flow.png",
     crop=False,
     rescaler_factor=1.0,
-    color = "black",
-    alpha = 1.0,
+    color="black",
+    alpha=1.0,
     colormap="none",
 ):
     # Prepare the image
@@ -538,7 +538,9 @@ def flow_function(
     if colormap == "none":
         intersections.plot(ax=ax, facecolor=color, edgecolor="none", alpha=alpha)
     else:
-        intersections.plot(ax=ax, facecolor=color, edgecolor="none", cmap=colormap, alpha=alpha)
+        intersections.plot(
+            ax=ax, facecolor=color, edgecolor="none", cmap=colormap, alpha=alpha
+        )
     ax.set_aspect("equal")
     ax.set_axis_off()
     plt.tight_layout()
