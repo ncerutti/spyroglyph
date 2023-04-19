@@ -5,6 +5,8 @@ Then I thought it would be practical to make a webapp for it. You can check it o
 
 <img src="https://github.com/ncerutti/spyroglyph/blob/main/images/ritalm.png"
      alt="Rita Levi Montalcini portrait"
+     width="200"
+     height="200"
      style="float: left; margin-right: 10px;" />
 
 I just started, so if anybody wants to collaborate I would be extremely happy, feel free to do so, hit me up and/or open a pull request!
