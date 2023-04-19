@@ -212,9 +212,11 @@ def spiral_function(
     thick_f=0.95,
     spiral_offset_angle=0,
     crop=False,
+    color="black",
     colormap="gray",
     output_image="output.png",
     rescaler_factor=1.0,
+    alpha=0.75,
 ):
     """
     Args:
@@ -273,9 +275,11 @@ def spiral_function(
     )
     fig, ax = plt.subplots()
     if colormap == "none":
-        intersections.plot(ax=ax, facecolor="black", edgecolor="none")
+        intersections.plot(ax=ax, facecolor=color, edgecolor="none", alpha=alpha)
     else:
-        intersections.plot(ax=ax, facecolor="black", edgecolor="none", cmap=colormap)
+        intersections.plot(
+            ax=ax, facecolor=color, edgecolor="none", cmap=colormap, alpha=alpha
+        )
     ax.set_aspect("equal")
     ax.set_axis_off()
     plt.tight_layout()
@@ -374,8 +378,12 @@ def double_spiral_function(
 
     # Plot intersections with different colors
     fig, ax = plt.subplots()
-    intersections_positive.plot(ax=ax, facecolor=color_1, edgecolor="none", alpha=alpha_1)
-    intersections_negative.plot(ax=ax, facecolor=color_2, edgecolor="none", alpha=alpha_2)
+    intersections_positive.plot(
+        ax=ax, facecolor=color_1, edgecolor="none", alpha=alpha_1
+    )
+    intersections_negative.plot(
+        ax=ax, facecolor=color_2, edgecolor="none", alpha=alpha_2
+    )
     ax.set_aspect("equal")
     ax.set_axis_off()
     plt.tight_layout()

@@ -23,8 +23,8 @@ def main():
         crop = st.sidebar.checkbox("Crop Image")
         colormap = st.sidebar.selectbox("Colormap", ["none", "viridis", "plasma"])
         rescaler_factor = st.sidebar.slider("Rescaler Factor", 0.0, 2.0, 1.0)
-        grid_size = st.sidebar.slider("Grid Size", 1, 50, 10)
-        grid_angle = st.sidebar.slider("Grid Angle", 0, 360, 0)
+        color = st.sidebar.color_picker("Color", "#000000")
+        alpha = st.sidebar.slider("Alpha", 0.0, 1.0, 1.0)
         # Create a temporary file for the input image
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file:
             input_image.save(temp_file.name)
@@ -45,8 +45,10 @@ def main():
                 spiral_offset_angle=spiral_offset_angle,
                 crop=crop,
                 colormap=colormap,
+                color=color,
                 output_image=output_buffer,
                 rescaler_factor=rescaler_factor,
+                alpha=alpha,
             )
             output_image = Image.open(output_buffer)
             st.image(output_image, caption="Generated Spiral", use_column_width=True)
