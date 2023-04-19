@@ -3,13 +3,13 @@
 I saw Chris Holmes' repo (https://github.com/cj-holmes/photos-on-spirals) of cool effects on pictures and I thought I would try and make a python version of it.
 Then I thought it would be practical to make a webapp for it. You can check it out here: https://ncerutti-spyroglyph-welcome-bpdyzh.streamlit.app/
 
-<center>
+<p align="center">
 <img src="https://github.com/ncerutti/spyroglyph/blob/main/images/ritalm.png"
      alt="Rita Levi Montalcini portrait"
      width="200"
      height="200"
      style="float: left; margin-right: 10px;" />
-</center>
+</p>
      
 I just started, so if anybody wants to collaborate I would be extremely happy, feel free to do so, hit me up and/or open a pull request!
 
