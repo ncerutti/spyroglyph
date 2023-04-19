@@ -29,9 +29,13 @@ def main():
         thick_f = st.sidebar.slider("Thick factor", 0.0, 1.0, 0.95)
         spiral_offset_angle = st.sidebar.slider("Spiral Offset Angle", 0, 360, 0)
         crop = st.sidebar.checkbox("Crop Image")
-        colormap = st.sidebar.selectbox(
-            "Colormap", ["gray", "viridis", "plasma", "none"]
-        )
+        color_1 = st.sidebar.color_picker("Color 1", "#000000")
+        color_2 = st.sidebar.color_picker("Color 2", "#FFFFFF")
+        alpha_1 = st.sidebar.slider("Alpha 1", 0.0, 1.0, 0.75)
+        alpha_2 = st.sidebar.slider("Alpha 2", 0.0, 1.0, 0.75)
+        # colormap_1 = st.sidebar.selectbox(
+        #    "Colormap", ["gray", "viridis", "plasma", "none"]
+        # )
         rescaler_factor = st.sidebar.slider("Rescaler Factor", 0.0, 2.0, 1.0)
         # Create a temporary file for the input image
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file_1:
@@ -56,7 +60,10 @@ def main():
                 thick_f=thick_f,
                 spiral_offset_angle=spiral_offset_angle,
                 crop=crop,
-                colormap=colormap,
+                color_1=color_1,
+                color_2=color_2,
+                alpha_1=alpha_1,
+                alpha_2=alpha_2,
                 output_image=output_buffer,
                 rescaler_factor=rescaler_factor,
             )
