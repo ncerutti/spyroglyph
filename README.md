@@ -18,7 +18,7 @@ Then I thought it would be practical to make a webapp for it. You can check it o
 </p>
 <br/>
 
-I just started, so if anybody wants to collaborate I would be extremely happy, feel free to hit me up and/or open a pull request!
+I just started, so if anybody wants to improve it go ahead, feel free to hit me up and/or open a pull request! I might work on it myself in the near future too.
 
 There's plenty to do: the implementation is probably not the quickest, nor the most elegant. Not all options for the double spiral are added. The output could be nicer, especially if we look beside the pure spiral (the defaults could be changed, perhaps?), and some more personalisation wouldn't hurt.
 
