@@ -19,9 +19,23 @@ def main():
         initial_sidebar_state="expanded",
     )
     st.title("Image effects")
+    st.write("Choose a function from the menu on the left.")
+    st.write(
+        "This webapp is in development, so please consider that some functions are a work in progress. The spiral defaults should provide a relatively pleasant output, though :)"
+    )
+    st.write(
+        "Your feedback is greatly appreciated! In particular, both double spiral and flow are experimental features, as are the rescaling and crop function in the spiral page."
+    )
+    st.write(
+        "For any feedback, or if you want to help me on this, please talk to me on: https://github.com/ncerutti/spyroglyph."
+    )
 
     # Function selection
-    function_choices = ["Spiral", "Double Spiral", "Flow"]
+    function_choices = [
+        "Spiral",
+        "Double Spiral (experimental)",
+        "Flow (experimental)",
+    ]
     selected_function = st.sidebar.selectbox("Choose a function", function_choices)
 
     # Display example image

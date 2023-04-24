@@ -25,13 +25,13 @@ def prepare_image(img, size, shades, crop=False):
     """
     if crop:
         width, height = img.size
-        if width > size or height > size:
+        if width < size or height < size:
             raise ValueError("Image is too small to crop")
         left = (width - size) / 2
         top = (height - size) / 2
         right = (width + size) / 2
         bottom = (height + size) / 2
-        i = img.crop((left, right, top, bottom))
+        i = img.crop((left, top, right, bottom))
     else:
         i = img.resize((size, size))
     i = i.quantize(shades)

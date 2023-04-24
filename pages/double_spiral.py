@@ -7,7 +7,7 @@ import os
 
 
 def main():
-    st.title("Double Spiral")
+    st.title("Double Spiral (experimental!)")
     uploaded_file_1 = st.file_uploader(
         "Choose a png image file", type=["png", "jpg"], key="uploader_one"
     )

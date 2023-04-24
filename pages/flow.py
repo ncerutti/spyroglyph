@@ -6,7 +6,7 @@ from effects import flow_function
 
 
 def main():
-    st.title("Flow")
+    st.title("Flow (experimental!)")
     uploaded_file = st.file_uploader("Choose a png image file", type=["png", "jpg"])
     if uploaded_file is not None:
         input_image = Image.open(uploaded_file)
