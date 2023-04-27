@@ -108,6 +108,23 @@ def plot_spiral_and_polygons(spiral_coords, polygons_gdf):
     plt.tight_layout()
     plt.show()
 
+def pixelate(image, pixel_size):
+    """Pixelate the given image.
+
+    Args:
+        image (PIL.Image): Image to pixelate
+        pixel_size (int): Size of the pixels
+
+    Returns:
+        PIL.Image: Pixelated image
+    """
+    width, height = image.size
+    x_pixels = width // pixel_size
+    y_pixels = height // pixel_size
+    image = image.resize((x_pixels, y_pixels))
+    image = image.resize((width, height), Image.NEAREST)
+    return image
+
 
 def plot_polygons(polygons):
     """Plot the given polygons GeoDataFrame. Mostly for debugging.
